@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Notes AI | PS-02</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; min-height: 100vh; margin: 0; }
+        .card { background: white; width: 100%; max-width: 700px; padding: 40px; border-radius: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); align-self: center; }
+        h1 { color: var(--primary); font-weight: 800; margin-bottom: 5px; }
+        p.subtitle { color: #64748b; margin-bottom: 25px; font-size: 14px; }
+        textarea { width: 100%; height: 200px; padding: 15px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 16px; box-sizing: border-box; resize: none; margin-bottom: 15px; font-family: inherit; }
+        textarea:focus { outline: none; border-color: var(--primary); }
+        .btns { display: flex; gap: 10px; margin-bottom: 20px; }
+        button { flex: 1; padding: 14px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-sec { background: #f1f5f9; color: #475569; }
+        #loading { display: none; text-align: center; margin: 20px 0; color: var(--primary); font-weight: 600; }
+        .result-box { display: none; margin-top: 20px; border-top: 2px solid #f1f5f9; padding-top: 20px; animation: fadeIn 0.5s ease; }
+        .item { background: #f8fafc; padding: 12px; border-radius: 10px; border-left: 4px solid var(--primary); margin-bottom: 10px; font-size: 14px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Smart Notes AI</h1>
+        <p class="subtitle">Extracting decisions and action items in seconds.</p>
+        
+        <textarea id="noteInput" placeholder="Paste meeting transcripts or messy notes here..."></textarea>
+        
+        <div class="btns">
+            <button class="btn-main" onclick="runAI()">✨ Process Notes</button>
+            <button class="btn-sec" onclick="copyResult()">📋 Copy Markdown</button>
+        </div>
+
+        <div id="loading">🚀 AI is thinking...</div>
+
+        <div id="result" class="result-box">
+            <h3 id="resSummaryTitle">Summary</h3>
+            <p id="resSummaryText" style="line-height: 1.6; margin-bottom: 20px;"></p>
+            <h3>✅ Action Items</h3>
+            <div id="actionList"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "AIzaSyBQGxaJ6CmYMtzNHw1R-BQan_1sDsUVit4";
+
+        // PERSISTENCE: Auto-load last notes
+        window.onload = () => {
+            const last = localStorage.getItem('user_notes');
+            if(last) document.getElementById('noteInput').value = last;
+        };
+
+        async function runAI() {
+            const text = document.getElementById('noteInput').value;
+            if(!text) return alert("Please paste some notes first!");
+            
+            localStorage.setItem('user_notes', text); // Save to local storage
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+
+            const prompt = `Convert these notes into a structured summary and action items list in JSON format. 
+            Keys: "summary" (string), "actions" (array of strings). 
+            Notes: ${text}`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                const data = await response.json();
+                const raw = data.candidates[0].content.parts[0].text.replace(/```json|```/g, "");
+                const clean = JSON.parse(raw);
+
+                showUI(clean);
+            } catch (err) {
+                alert("Error. If you are local, check if the API key is injected.");
+                console.error(err);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function showUI(data) {
+            document.getElementById('resSummaryText').innerText = data.summary;
+            document.getElementById('actionList').innerHTML = data.actions.map(a => `<div class="item">${a}</div>`).join('');
+            document.getElementById('result').style.display = 'block';
+        }
+
+        function copyResult() {
+            const summary = document.getElementById('resSummaryText').innerText;
+            const actions = Array.from(document.querySelectorAll('.item')).map(i => "- " + i.innerText).join('\n');
+            const md = `# Summary\n${summary}\n\n# Action Items\n${actions}`;
+            navigator.clipboard.writeText(md);
+            alert("Markdown copied!");
+        }
+    </script>
+</body>
+</html>
