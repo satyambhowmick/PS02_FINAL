@@ -19,14 +19,14 @@
             margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh;
         }
         .container { 
-            width: 90%; max-width: 800px; background: var(--card); 
+            width: 90%; max-width: 750px; background: var(--card); 
             padding: 40px; border-radius: 28px; 
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
             border: 1px solid rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
         }
         h1 { font-size: 32px; font-weight: 800; margin: 0; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .subtitle { color: var(--text-dim); margin-bottom: 30px; font-size: 15px; }
+        .subtitle { color: var(--text-dim); margin-bottom: 30px; font-size: 14px; }
         
         textarea { 
             width: 100%; height: 180px; padding: 20px; border-radius: 16px; 
@@ -44,7 +44,6 @@
         .btn-primary { background: var(--brand); color: white; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); }
         .btn-primary:hover { background: var(--brand-hover); transform: translateY(-2px); }
         .btn-secondary { background: #334155; color: white; }
-        .btn-secondary:hover { background: #475569; }
 
         #loading { display: none; margin: 20px 0; color: var(--brand); font-weight: 600; text-align: center; }
         
@@ -55,28 +54,27 @@
         .summary-text { line-height: 1.7; font-size: 16px; color: #cbd5e1; margin-bottom: 30px; }
         
         .action-card { 
-            background: rgba(255,255,255,0.03); padding: 16px; border-radius: 12px; 
-            margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05);
-            display: flex; align-items: flex-start; gap: 12px;
+            background: rgba(255,255,255,0.03); padding: 14px; border-radius: 12px; 
+            margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.05);
+            display: flex; align-items: center; gap: 12px;
         }
-        .action-card span { font-size: 14px; line-height: 1.5; }
-        .dot { height: 8px; width: 8px; background: var(--brand); border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+        .dot { height: 8px; width: 8px; background: var(--brand); border-radius: 50%; flex-shrink: 0; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>Smart Notes AI</h1>
-    <p class="subtitle">Transforming messy meetings into crystal-clear actions.</p>
+    <p class="subtitle">PS-02 | Intelligent Summarization & Action Extraction</p>
 
-    <textarea id="noteInput" placeholder="Paste your raw notes or transcript here..."></textarea>
+    <textarea id="noteInput" placeholder="Paste your meeting notes here..."></textarea>
 
     <div class="btn-group">
         <button class="btn-primary" onclick="generateAI()">✨ Analyze Notes</button>
         <button class="btn-secondary" onclick="copyMD()">📋 Copy Markdown</button>
     </div>
 
-    <div id="loading">🔮 AI is de-cluttering your notes...</div>
+    <div id="loading">🔮 Processing with Gemini AI...</div>
 
     <div id="result" class="result-area">
         <div class="section-label">Summary</div>
@@ -88,9 +86,9 @@
 </div>
 
 <script>
+    // EXACT MATCH FOR ROBOT:
     const API_KEY = "__API_KEY_PLACEHOLDER__";
 
-    // Persistence: Load previous notes
     window.onload = () => {
         const cached = localStorage.getItem('meeting_cache');
         if(cached) document.getElementById('noteInput').value = cached;
@@ -104,8 +102,8 @@
         document.getElementById('loading').style.display = 'block';
         document.getElementById('result').style.display = 'none';
 
-        const prompt = `Convert the following notes into a JSON object. 
-        Structure: {"summary": "Brief overview", "actions": ["Action 1", "Action 2"]}.
+        const prompt = `Convert the following notes into a JSON object. Return ONLY JSON. 
+        Structure: {"summary": "Brief 2-sentence overview", "actions": ["Action 1", "Action 2"]}.
         Notes: ${input}`;
 
         try {
@@ -116,12 +114,11 @@
             });
 
             const data = await res.json();
-            if (!data.candidates) throw new Error("Invalid API Key or Limit reached.");
+            if (!data.candidates) throw new Error("Check if API Key is correct in Secrets.");
 
             let rawText = data.candidates[0].content.parts[0].text;
             const cleanJSON = JSON.parse(rawText.replace(/```json|```/g, ""));
 
-            // Render UI
             document.getElementById('summaryDisplay').innerText = cleanJSON.summary;
             document.getElementById('actionsDisplay').innerHTML = cleanJSON.actions.map(a => `
                 <div class="action-card">
@@ -132,7 +129,7 @@
 
             document.getElementById('result').style.display = 'block';
         } catch (err) {
-            alert("Oops! " + err.message);
+            alert("Error: " + err.message);
         } finally {
             document.getElementById('loading').style.display = 'none';
         }
@@ -142,7 +139,7 @@
         const sum = document.getElementById('summaryDisplay').innerText;
         const acts = Array.from(document.querySelectorAll('.action-card span')).map(s => "- " + s.innerText).join('\n');
         navigator.clipboard.writeText(`# Summary\n${sum}\n\n# Actions\n${acts}`);
-        alert("Formatted Markdown copied!");
+        alert("Markdown copied!");
     }
 </script>
 

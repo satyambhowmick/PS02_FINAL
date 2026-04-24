@@ -3,13 +3,17 @@ on:
   push:
     branches: [main]
 jobs:
-  deploy-job:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Inject Key
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: Inject API Key
+        # This line searches for the EXACT string in index.html and swaps it
         run: sed -i "s/__API_KEY_PLACEHOLDER__/${{ secrets.API_KEY }}/g" index.html
-      - name: Push to Pages
+        
+      - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: .
