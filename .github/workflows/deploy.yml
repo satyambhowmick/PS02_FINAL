@@ -1,15 +1,15 @@
-name: Deploy
+name: Final Deploy
 on:
   push:
     branches: [main]
 jobs:
-  build:
+  deploy-job:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inject API Key
+      - name: Inject Key
         run: sed -i "s/__API_KEY_PLACEHOLDER__/${{ secrets.API_KEY }}/g" index.html
-      - name: Deploy to Pages
+      - name: Push to Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: .
